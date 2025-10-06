@@ -42,7 +42,7 @@ const registerUser = async (req, res) => {
       avatar: avatar_img.url,
       coverImage: cover_img?.url || "",
     });
-
+password
     const created_user = await User.findById(user._id).select("-password -refreshToken");
 
     if (!created_user) {
