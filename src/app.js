@@ -20,7 +20,7 @@ app.use(cookieParserz())
 import userRouter from "./routes/users.routers.js";
 
 app.use("/api/v1/users",userRouter);
-
+        
 
 export default app
 
