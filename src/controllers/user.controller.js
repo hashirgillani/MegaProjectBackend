@@ -3,6 +3,29 @@ import ApiResponse from "../utils/ApiResponse.js";
 import { User } from "../models/User.models.js";
 import uploadonCloudinary from "../utils/cloudinary.js";
 
+
+const generateAccessandRefreshToken = async(userID)=>{
+  try {
+    const user = await User.findById(userID);
+    if (!user) {
+         throw new ApiError(409, "User is not existed");
+    }
+    const accessToken =  user.AccessTokenGenerated()
+    const refreshToken  =  user.RefreshTokenGenerated()
+
+    
+  
+    user.refreshToken = refreshToken
+  
+    await user.save({validateBeforeSave:false})
+    return {accessToken,refreshToken}
+    
+  }
+  catch (error) {
+     throw new ApiError(500, "Something went wrong while generating referesh and access token")
+  }
+}
+
 const registerUser = async (req, res) => {
   try {
     console.log("BODY:", req.body);
@@ -91,4 +114,78 @@ const registerUser = async (req, res) => {
   }
 };
 
-export default registerUser;
+
+
+const loggedIn = async (req,res)=>{
+  //loggedIn user
+
+// get data from body
+// check validation for email and password is not empty
+// search user based on email
+// check user password correct or not
+// generate access and refresh token
+// set refresh toekn into databse
+// set coth refresh and access cookies 
+// return response
+  try {
+    console.log(req.body);
+    
+    const {email,password} = req.body;
+    if ([email,password].some(field=>!field.trim())) {
+          throw new ApiError(401, "Both Fields are Required");
+    }
+  const user =   await User.findOne({email})
+
+  
+  if (!user) {
+     throw new ApiError(409, "User is not existed");
+  }
+  const isPasseordCorrect = await user.isPasswordCorrect(password)
+  
+  if (!isPasseordCorrect) {
+     throw new ApiError(409, "Incorrect Password");
+  }
+  const {accessToken,refreshToken}= await generateAccessandRefreshToken(user._id)
+
+  const user_data = await User.findById(user._id).select("-password -refreshToken")
+
+  const options = {
+    httpOnly:true,
+    secure:true
+  }
+
+  return res.status(200)
+  .cookie("accessToken",accessToken,options)
+  .cookie("refreshToken",refreshToken,options)
+  .json(
+    new ApiResponse(200, user_data, "User login successfully")
+  )
+  
+
+
+  } catch (error) {
+    console.error("login Failed:", error);
+    
+    // Handle ApiError instances
+    if (error instanceof ApiError) {
+      return res.status(error.statusCode).json({
+        statusCode: error.statusCode,
+        message: error.message,
+        success: false,
+        errors: error.errors
+      });
+    }
+    
+    // Handle other errors
+    return res.status(500).json({
+      statusCode: 500,
+      message: error.message || "Something went wrong while login account",
+      success: false,
+      errors: []
+    });
+  
+  }
+}
+
+
+export  {registerUser,loggedIn};
