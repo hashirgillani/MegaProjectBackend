@@ -1,5 +1,4 @@
 import ApiError from "../utils/ApiError.js";
-import ApiResponse from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
 import {User} from "../models/User.models.js";
 
@@ -18,7 +17,7 @@ const get_Record_user_when_login = async (req, res, next) => {
             if (!user) {
                 throw new ApiError(401, "Invaild Access Toekn")
             }
-            res.user = user;
+            req.user = user;
             next()
   } catch (error) {
     console.error("Erro While Record Fetching:", error);

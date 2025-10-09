@@ -297,5 +297,63 @@ const generateAccessToken = async (req,res)=>{
   }
 } 
 
+// todo : {changePassword, getCurrentuser, updateAccountdetails, updateAcatar,updateCoverImage}
 
-export { registerUser, loggedIn, logoutUser,generateAccessToken };
+const changePassword = async (req,res)=>{
+  // get  oldpass and new pass from user
+  // check both fields are not empty
+  // check oldpassword is correct or not fromdb
+  // if oldpassword correct then update newpass and save into db
+  // return resp
+
+  
+  const {oldpassword,newpassword} = req.body
+  try {
+    if([oldpassword,newpassword].some(field=>!field.trim())){
+      throw new ApiError(401,"Both Fields Required")
+    }
+    // console.log("user_data",req.user);
+      if (oldpassword == newpassword) {
+        throw new ApiError(401,"New Password mush be diffrent form old password try diffrent one")
+      }
+    const user = await User.findById(req.user?._id)
+    // console.log(user);
+    
+     const isPasswordCorrect = await user.isPasswordCorrect(oldpassword)
+     if (!isPasswordCorrect) {
+        throw new ApiError(401,"oldPassword is not correct")
+     }
+     user.password = newpassword
+     await user.save({validateBeforeSave:false})
+  
+     return res.status(200).json(
+      new ApiResponse(200,{},"password changed successfully")
+     )
+  } catch (error) {
+    console.error("Failed to Changed Password", error);
+
+    // Handle ApiError instances
+    if (error instanceof ApiError) {
+      return res.status(error.statusCode).json({
+        statusCode: error.statusCode,
+        message: error.message,
+        success: false,
+        errors: error.errors,
+      });
+    }
+
+    // Handle other errors
+    return res.status(500).json({
+      statusCode: 500,
+      message: error.message || "Something went wrong while Changing Password",
+      success: false,
+      errors: [],
+    });
+  }
+
+
+
+ 
+}
+
+export { registerUser, loggedIn, logoutUser,generateAccessToken,changePassword };
