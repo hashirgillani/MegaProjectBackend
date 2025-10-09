@@ -297,7 +297,7 @@ const generateAccessToken = async (req,res)=>{
   }
 } 
 
-// todo : {changePassword, getCurrentuser, updateAccountdetails, updateAcatar,updateCoverImage}
+// todo : { getCurrentuser, updateAccountdetails, updateAcatar,updateCoverImage}
 
 const changePassword = async (req,res)=>{
   // get  oldpass and new pass from user
@@ -355,5 +355,34 @@ const changePassword = async (req,res)=>{
 
  
 }
+const getCurrentUser = async(req,res)=>{
+    try {
+        
+         return res.status(200).json(
+            new ApiResponse(200,req.user,"user feched successfully")
+         )
+    } catch (error) {
+    console.error("Failed to get current user", error);
 
-export { registerUser, loggedIn, logoutUser,generateAccessToken,changePassword };
+    // Handle ApiError instances
+    if (error instanceof ApiError) {
+      return res.status(error.statusCode).json({
+        statusCode: error.statusCode,
+        message: error.message,
+        success: false,
+        errors: error.errors,
+      });
+    }
+
+    // Handle other errors
+    return res.status(500).json({
+      statusCode: 500,
+      message: error.message || "Something went wrong while getting current user",
+      success: false,
+      errors: [],
+    });
+  }
+
+}
+
+export { registerUser, loggedIn, logoutUser,generateAccessToken,changePassword,getCurrentUser };
