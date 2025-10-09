@@ -2,6 +2,8 @@ import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import { User } from "../models/User.models.js";
 import uploadonCloudinary from "../utils/cloudinary.js";
+import jwt from "jsonwebtoken";
+
 
 const generateAccessandRefreshToken = async (userID) => {
   try {
@@ -235,5 +237,65 @@ const logoutUser = async (req, res) => {
     });
   }
 };
+const generateAccessToken = async (req,res)=>{
+  // get userRefreshToken from cookies or from body
+// check if efreshToken not received
+// if received then verify toekn expire and validate and decode It
+// decoded toekn has userId search user based on id from database
+// match user incoming teken and databse toekn if match
+// generated new accesstoekn token 
+// send response
+  try {
 
-export { registerUser, loggedIn, logoutUser };
+    const inocmingUserrefreshToken =   req.cookies.refreshToken || req.body.refreshToken
+    if (!inocmingUserrefreshToken) {
+      throw new ApiError(401, "unauthorized request");
+    }
+
+     const decodedRefreshToken =  jwt.verify(inocmingUserrefreshToken,process.env.REFRESH_TOKEN_SECRET)
+
+  const user_data = await  User.findById(decodedRefreshToken?._id)
+  if (!user_data) {
+    throw new ApiError(401, "Invalid Refresh Token");
+  }
+
+  if (inocmingUserrefreshToken != user_data?.refreshToken) {
+    throw new ApiError(401, "Refresh Token is expired");
+  }
+  const { accessToken, refreshToken }  = await  generateAccessandRefreshToken(user_data?._id)
+  const options = {
+    httpOnly:true,
+    secure:true
+  }
+
+  res.status(200)
+  .cookie("accessToken",accessToken,options)
+  .cookie("refreshToken",refreshToken,options)
+  .json(
+    new ApiResponse(200,{ accessToken, refreshToken },"AccessTokenRefreshed")
+  )
+  }  catch (error) {
+    console.error("Failed to generateAccessToken", error);
+
+    // Handle ApiError instances
+    if (error instanceof ApiError) {
+      return res.status(error.statusCode).json({
+        statusCode: error.statusCode,
+        message: error.message,
+        success: false,
+        errors: error.errors,
+      });
+    }
+
+    // Handle other errors
+    return res.status(500).json({
+      statusCode: 500,
+      message: error.message || "Something went wrong while generating AccessToken",
+      success: false,
+      errors: [],
+    });
+  }
+} 
+
+
+export { registerUser, loggedIn, logoutUser,generateAccessToken };
