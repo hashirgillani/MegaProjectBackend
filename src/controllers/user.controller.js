@@ -298,7 +298,7 @@ const generateAccessToken = async (req,res)=>{
   }
 } 
 
-// todo : {  updateAcatar,updateCoverImage}
+// todo : { updateCoverImage}
 
 const changePassword = async (req,res)=>{
   // get  oldpass and new pass from user
@@ -428,4 +428,104 @@ const updateAccountdetails = async (req,res)=>{
   }
 
 }
-export { registerUser, loggedIn, logoutUser,generateAccessToken,changePassword,getCurrentUser,updateAccountdetails };
+
+const updateAvatar  = async(req,res)=>{
+  // get avatar from user(use multer get local path from oucl temp)
+  // if fildgetsuccessfully then upload on uploadonCloudinary
+  // check if successfully upload on cloudinary so get url
+  // search currentuser and update avatar File
+  // send response
+
+
+ const upload_file = req.file?.path
+ 
+try {
+   if (!upload_file) {
+      throw new ApiError(401,"avatar field empty")
+   }
+   const uplodFileOnCloudinary = await uploadonCloudinary(upload_file)
+   if (!uplodFileOnCloudinary) {
+       throw new ApiError(501,"server failed to upload file try again")
+   }
+   const response = await  User.findByIdAndUpdate(req.user?._id,
+      {
+        $set:{
+          "avatar":uplodFileOnCloudinary?.url
+        }
+      },
+      {
+        new:true
+      }
+    ).select("-password")
+    res.status(200).json(
+      new ApiResponse(200,response,"Avatar Updated Successfully")
+    )
+}catch (error) {
+    console.error("Failed to update avatar", error);
+
+    // Handle ApiError instances
+    if (error instanceof ApiError) {
+      return res.status(error.statusCode).json({
+        statusCode: error.statusCode,
+        message: error.message,
+        success: false,
+        errors: error.errors,
+      });
+    }
+
+    // Handle other errors
+    return res.status(500).json({
+      statusCode: 500,
+      message: error.message || "Something went wrong while updating avatar",
+      success: false,
+      errors: [],
+    });
+  }
+
+}
+
+const updateCoverImage = async(req,res)=>{
+  try {
+   const uploded_file_path =  req.file?.path
+   if (!uploded_file_path) {
+      throw new ApiResponse(401,"file is requires")
+   }
+   const fileUplodOnCloudinary = await uploadonCloudinary(uploded_file_path)
+   if (!fileUplodOnCloudinary) {
+    throw new ApiResponse(501,"Error while uploding file on cloudinary try again later")
+   }
+   const response = await User.findByIdAndUpdate(req.user?._id,
+    {
+      $set:{
+          
+          "coverImage":fileUplodOnCloudinary?.url
+      }
+    },
+    {new:true}
+   ).select("-password")
+   res.status(200).json(
+    new ApiResponse(200,response,"CoverImage update successfully")
+   )
+  } catch (error) {
+    console.error("Failed to update coverImage", error);
+
+    // Handle ApiError instances
+    if (error instanceof ApiError) {
+      return res.status(error.statusCode).json({
+        statusCode: error.statusCode,
+        message: error.message,
+        success: false,
+        errors: error.errors,
+      });
+    }
+
+    // Handle other errors
+    return res.status(500).json({
+      statusCode: 500,
+      message: error.message || "Something went wrong while updating coverImage",
+      success: false,
+      errors: [],
+    });
+  }
+}
+export { registerUser, loggedIn, logoutUser,generateAccessToken,changePassword,getCurrentUser,updateAccountdetails,updateAvatar,updateCoverImage };

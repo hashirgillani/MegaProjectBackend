@@ -1,4 +1,4 @@
-import {registerUser,loggedIn,logoutUser,generateAccessToken,changePassword,getCurrentUser,updateAccountdetails} from "../controllers/user.controller.js"
+import {registerUser,loggedIn,logoutUser,generateAccessToken,changePassword,getCurrentUser,updateAccountdetails,updateAvatar,updateCoverImage} from "../controllers/user.controller.js"
 import {upload} from "../middleware/multer.middleware.js";
 import get_Record_user_when_login from "../middleware/getRecordofUserWhenlogin.js"
 
@@ -21,3 +21,14 @@ router.route("/generate-access-token").post(generateAccessToken)
 router.route("/change-password").post(get_Record_user_when_login,changePassword)
 router.route("/get-current-user").post(get_Record_user_when_login,getCurrentUser)
 router.route("/update-user-record").post(get_Record_user_when_login,updateAccountdetails)
+router.route("/update-avatar").post(
+    upload.single("avatar"),
+    get_Record_user_when_login,
+    updateAvatar
+)
+
+router.route("/updat-coverImage").post(
+    upload.single("coverImage"),
+    get_Record_user_when_login,
+    updateCoverImage
+)
