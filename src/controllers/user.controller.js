@@ -3,6 +3,7 @@ import ApiResponse from "../utils/ApiResponse.js";
 import { User } from "../models/User.models.js";
 import uploadonCloudinary from "../utils/cloudinary.js";
 import jwt from "jsonwebtoken";
+import { DB_NAME } from "../constants.js";
 
 
 const generateAccessandRefreshToken = async (userID) => {
@@ -297,7 +298,7 @@ const generateAccessToken = async (req,res)=>{
   }
 } 
 
-// todo : { getCurrentuser, updateAccountdetails, updateAcatar,updateCoverImage}
+// todo : {  updateAcatar,updateCoverImage}
 
 const changePassword = async (req,res)=>{
   // get  oldpass and new pass from user
@@ -385,4 +386,46 @@ const getCurrentUser = async(req,res)=>{
 
 }
 
-export { registerUser, loggedIn, logoutUser,generateAccessToken,changePassword,getCurrentUser };
+const updateAccountdetails = async (req,res)=>{
+  
+ try {
+   const {fullName,email} = req.body
+   if ([fullName,email].some(filed=>!filed.trim())) {
+     throw new ApiError(401,"all fields are reruired")
+   }
+   const update_user_rocord = await User.findByIdAndUpdate(req.user?._id,
+     {
+       $set:{
+           fullName,
+           email
+       }
+     },
+     {new:true}
+ ).select("-password")
+   return res.status(200).json(
+     new ApiResponse(200,update_user_rocord,"user record updated successfully")
+   )
+ } catch (error) {
+    console.error("Failed to Update user", error);
+
+    // Handle ApiError instances
+    if (error instanceof ApiError) {
+      return res.status(error.statusCode).json({
+        statusCode: error.statusCode,
+        message: error.message,
+        success: false,
+        errors: error.errors,
+      });
+    }
+
+    // Handle other errors
+    return res.status(500).json({
+      statusCode: 500,
+      message: error.message || "Something went wrong while updating user record",
+      success: false,
+      errors: [],
+    });
+  }
+
+}
+export { registerUser, loggedIn, logoutUser,generateAccessToken,changePassword,getCurrentUser,updateAccountdetails };
